@@ -238,10 +238,10 @@ HassDeviceInfo* hass_init_light_device_info(ENTITY_TYPE type) {
 
 #ifndef OBK_DISABLE_ALL_DRIVERS
 
-/// @brief Initializes HomeAssistant sensor device discovery storage.
+/// @brief Initializes HomeAssistant power related sensor device discovery storage.
 /// @param index Index corresponding to sensor_mqttNames.
 /// @return 
-HassDeviceInfo* hass_init_sensor_device_info(int index) {
+HassDeviceInfo* hass_init_power_device_info(int index) {
 	HassDeviceInfo* info = hass_init_device_info(POWER_SENSOR, index, NULL, NULL);
 
 	//https://developers.home-assistant.io/docs/core/entity/sensor/#available-device-classes
