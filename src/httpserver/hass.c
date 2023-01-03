@@ -42,9 +42,15 @@ void hass_populate_unique_id(ENTITY_TYPE type, int index, char* uniq_id) {
 	case RELAY:
 		sprintf(uniq_id, "%s_%s_%d", longDeviceName, "relay", index);
 		break;
-
+		
 	case POWER_SENSOR:
 		sprintf(uniq_id, "%s_%s_%d", longDeviceName, "sensor", index);
+		break;
+	case TEMPERATURE_SENSOR:
+		sprintf(uniq_id, "%s_%s", longDeviceName, "temperature", index);
+		break;
+	case HUMIDITY_SENSOR:
+		sprintf(uniq_id, "%s_%s", longDeviceName, "humidity", index);
 		break;
 	}
 }
@@ -78,6 +84,8 @@ void hass_populate_device_config_channel(ENTITY_TYPE type, char* uniq_id, HassDe
 		break;
 
 	case POWER_SENSOR:
+	case TEMPERATURE_SENSOR:
+	case HUMIDITY_SENSOR:
 		sprintf(info->channel, "sensor/%s/config", uniq_id);
 		break;
 	}
@@ -106,8 +114,8 @@ cJSON* hass_build_device_node(cJSON* ids) {
 /// @brief Initializes HomeAssistant device discovery storage with common values.
 /// @param type 
 /// @param index This is used to generate generate unique_id and name. It is ignored for RGB. For sensor this corresponds to sensor_mqttNames.
-/// @param payload_on The payload that represents enabled state. This is not added for POWER_SENSOR.
-/// @param payload_off The payload that represents disabled state. This is not added for POWER_SENSOR.
+/// @param payload_on The payload that represents enabled state. This is not added for sensors.
+/// @param payload_off The payload that represents disabled state. This is not added for sensors.
 /// @return 
 HassDeviceInfo* hass_init_device_info(ENTITY_TYPE type, int index, char* payload_on, char* payload_off) {
 	HassDeviceInfo* info = os_malloc(sizeof(HassDeviceInfo));
@@ -124,6 +132,8 @@ HassDeviceInfo* hass_init_device_info(ENTITY_TYPE type, int index, char* payload
 	info->root = cJSON_CreateObject();
 	cJSON_AddItemToObject(info->root, "dev", info->device);    //device
 
+	bool isSensor = false;
+
 	//Build the `name`
 	switch (type) {
 	case LIGHT_PWM:
@@ -138,6 +148,8 @@ HassDeviceInfo* hass_init_device_info(ENTITY_TYPE type, int index, char* payload
 		sprintf(g_hassBuffer, "%s", CFG_GetShortDeviceName());
 		break;
 	case POWER_SENSOR:
+		isSensor = true;
+
 #ifndef OBK_DISABLE_ALL_DRIVERS
 		if ((index >= OBK_VOLTAGE) && (index <= OBK_POWER))
 			sprintf(g_hassBuffer, "%s %s", CFG_GetShortDeviceName(), sensor_mqttNames[index]);
@@ -145,12 +157,22 @@ HassDeviceInfo* hass_init_device_info(ENTITY_TYPE type, int index, char* payload
 			sprintf(g_hassBuffer, "%s %s", CFG_GetShortDeviceName(), counter_mqttNames[index - OBK_CONSUMPTION_TOTAL]);
 #endif
 		break;
+
+	case TEMPERATURE_SENSOR:
+		isSensor = true;
+		sprintf(g_hassBuffer, "%s Temperature", CFG_GetShortDeviceName());
+		break;
+	case HUMIDITY_SENSOR:
+		isSensor = true;
+		sprintf(g_hassBuffer, "%s Humidity", CFG_GetShortDeviceName());
+		break;
 	}
+
 	cJSON_AddStringToObject(info->root, "name", g_hassBuffer);
 	cJSON_AddStringToObject(info->root, "~", CFG_GetMQTTClientId());      //base topic
 	cJSON_AddStringToObject(info->root, "avty_t", "~/connected");   //availability_topic, `online` value is broadcasted
 
-	if (type != POWER_SENSOR) {
+	if (!isSensor) {
 		cJSON_AddStringToObject(info->root, "pl_on", payload_on);    //payload_on
 		cJSON_AddStringToObject(info->root, "pl_off", payload_off);   //payload_off
 	}
@@ -275,6 +297,38 @@ HassDeviceInfo* hass_init_power_device_info(int index) {
 }
 
 #endif
+
+/// @brief Initializes HomeAssistant sensor device discovery storage.
+/// @param type
+/// @param channel
+/// @return 
+HassDeviceInfo* hass_init_sensor_device_info(ENTITY_TYPE type, int channel) {
+	//Assuming that there is only one DHT setup per device which keeps uniqueid/names simpler
+	HassDeviceInfo* info = hass_init_device_info(type, -1, NULL, NULL);
+
+	//https://developers.home-assistant.io/docs/core/entity/sensor/#available-device-classes
+	switch (type) {
+	case TEMPERATURE_SENSOR:
+		cJSON_AddStringToObject(info->root, "dev_cla", "temperature");
+		cJSON_AddStringToObject(info->root, "unit_of_meas", "°C");
+		//cJSON_AddStringToObject(info->root, "native_unit_of_measurement", "°C");
+		//unit_of_measurement	unit_of_meas
+		//temperature_unit	temp_unit
+		break;
+	case HUMIDITY_SENSOR:
+		cJSON_AddStringToObject(info->root, "dev_cla", "humidity");
+		break;
+		
+	default:
+		return NULL;
+	}
+
+	sprintf(g_hassBuffer, "~/%d/get", channel);
+	cJSON_AddStringToObject(info->root, STATE_TOPIC_KEY, g_hassBuffer);
+
+	cJSON_AddStringToObject(info->root, "stat_cla", "measurement");
+	return info;
+}
 
 /// @brief Returns the discovery JSON.
 /// @param info 

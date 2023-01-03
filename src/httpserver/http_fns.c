@@ -1560,6 +1560,7 @@ void doHomeAssistantDiscovery(const char *topic, http_request_t *request) {
 	HassDeviceInfo* dev_info = NULL;
 	bool measuringPower = false;
 	struct cJSON_Hooks hooks;
+	bool discovery_sent = false;
 
 	if (topic == 0 || *topic == 0) {
 		topic = "homeassistant";
@@ -1573,18 +1574,6 @@ void doHomeAssistantDiscovery(const char *topic, http_request_t *request) {
 	//Note: PublishChannels should be done for the last MQTT publish except for power measurement which always
 	//sends out MQTT updates.
 	ledDriverChipRunning = LED_IsLedDriverChipRunning();
-
-	if ((relayCount == 0) && (pwmCount == 0) && !measuringPower && !ledDriverChipRunning) {
-		const char *msg = "No relay, PWM or power driver running.";
-		if (request) {
-			poststr(request, msg);
-			poststr(request, NULL);
-		}
-		else {
-			addLogAdv(LOG_ERROR, LOG_FEATURE_HTTP, "HA discovery: %s\r\n", msg);
-		}
-		return;
-	}
 
 	hooks.malloc_fn = os_malloc;
 	hooks.free_fn = os_free;
@@ -1612,6 +1601,8 @@ void doHomeAssistantDiscovery(const char *topic, http_request_t *request) {
 			MQTT_QueuePublishWithCommand(topic, dev_info->channel, hass_build_discovery_json(dev_info), OBK_PUBLISH_FLAG_RETAIN, ppCommand);
 			hass_free_device_info(dev_info);
 		}
+
+		discovery_sent = true;
 	}
 
 	if (pwmCount == 5 || ledDriverChipRunning) {
@@ -1619,6 +1610,7 @@ void doHomeAssistantDiscovery(const char *topic, http_request_t *request) {
 		dev_info = hass_init_light_device_info(LIGHT_RGBCW);
 		MQTT_QueuePublishWithCommand(topic, dev_info->channel, hass_build_discovery_json(dev_info), OBK_PUBLISH_FLAG_RETAIN, PublishChannels);
 		hass_free_device_info(dev_info);
+		discovery_sent = true;
 	}
 	else if (pwmCount > 0) {
 		if (pwmCount == 4) {
@@ -1640,6 +1632,8 @@ void doHomeAssistantDiscovery(const char *topic, http_request_t *request) {
 			MQTT_QueuePublishWithCommand(topic, dev_info->channel, hass_build_discovery_json(dev_info), OBK_PUBLISH_FLAG_RETAIN, PublishChannels);
 			hass_free_device_info(dev_info);
 		}
+
+		discovery_sent = true;
 	}
 
 #ifndef OBK_DISABLE_ALL_DRIVERS
@@ -1650,8 +1644,36 @@ void doHomeAssistantDiscovery(const char *topic, http_request_t *request) {
 			MQTT_QueuePublish(topic, dev_info->channel, hass_build_discovery_json(dev_info), OBK_PUBLISH_FLAG_RETAIN);
 			hass_free_device_info(dev_info);
 		}
+
+		discovery_sent = true;
 	}
 #endif
+
+	for (i = 0; i < PLATFORM_GPIO_MAX; i++) {
+		if (IS_PIN_DHT_ROLE(g_cfg.pins.roles[i])) {
+			dev_info = hass_init_sensor_device_info(TEMPERATURE_SENSOR, PIN_GetPinChannelForPinIndex(i));
+			MQTT_QueuePublish(topic, dev_info->channel, hass_build_discovery_json(dev_info), OBK_PUBLISH_FLAG_RETAIN);
+			hass_free_device_info(dev_info);
+
+			dev_info = hass_init_sensor_device_info(HUMIDITY_SENSOR, PIN_GetPinChannel2ForPinIndex(i));
+			MQTT_QueuePublish(topic, dev_info->channel, hass_build_discovery_json(dev_info), OBK_PUBLISH_FLAG_RETAIN);
+			hass_free_device_info(dev_info);
+
+			discovery_sent = true;
+		}
+	}
+
+	if (!discovery_sent) {
+		const char *msg = "No relay, PWM, power driver or sensors running.";
+		if (request) {
+			poststr(request, msg);
+			poststr(request, NULL);
+		}
+		else {
+			addLogAdv(LOG_ERROR, LOG_FEATURE_HTTP, "HA discovery: %s\r\n", msg);
+		}
+		return;
+	}
 }
 
 /// @brief Sends HomeAssistant discovery MQTT messages.
