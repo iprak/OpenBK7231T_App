@@ -6,22 +6,22 @@
 
 typedef enum {
 	/// @brief Switch
-	ENTITY_RELAY = 0,
+	RELAY = 0,
 
 	/// @brief Single PWM
-	ENTITY_LIGHT_PWM,
+	LIGHT_PWM,
 
 	/// @brief 2 PWM setup (brightness and temperature)
-	ENTITY_LIGHT_PWMCW,
+	LIGHT_PWMCW,
 
 	/// @brief RGB (3 PWM)
-	ENTITY_LIGHT_RGB,
+	LIGHT_RGB,
 
 	/// @brief RGB + temperature (5 PWM or LED driver)
-	ENTITY_LIGHT_RGBCW,
+	LIGHT_RGBCW,
 
 	/// @brief Sensor (voltage, current, power)
-	ENTITY_SENSOR
+	POWER_SENSOR
 } ENTITY_TYPE;
 
 //unique_id is defined in hass_populate_unique_id and is based on CFG_GetDeviceName() whose size is CGF_DEVICE_NAME_SIZE.

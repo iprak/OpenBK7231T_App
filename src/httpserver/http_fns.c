@@ -1616,7 +1616,7 @@ void doHomeAssistantDiscovery(const char *topic, http_request_t *request) {
 
 	if (pwmCount == 5 || ledDriverChipRunning) {
 		// Enable + RGB control + CW control
-		dev_info = hass_init_light_device_info(ENTITY_LIGHT_RGBCW);
+		dev_info = hass_init_light_device_info(LIGHT_RGBCW);
 		MQTT_QueuePublishWithCommand(topic, dev_info->channel, hass_build_discovery_json(dev_info), OBK_PUBLISH_FLAG_RETAIN, PublishChannels);
 		hass_free_device_info(dev_info);
 	}
@@ -1626,14 +1626,14 @@ void doHomeAssistantDiscovery(const char *topic, http_request_t *request) {
 		}
 		else if (pwmCount == 3) {
 			// Enable + RGB control
-			dev_info = hass_init_light_device_info(ENTITY_LIGHT_RGB);
+			dev_info = hass_init_light_device_info(LIGHT_RGB);
 		}
 		else if (pwmCount == 2) {
 			// PWM + Temperature (https://github.com/openshwprojects/OpenBK7231T_App/issues/279)
-			dev_info = hass_init_light_device_info(ENTITY_LIGHT_PWMCW);
+			dev_info = hass_init_light_device_info(LIGHT_PWMCW);
 		}
 		else {
-			dev_info = hass_init_light_device_info(ENTITY_LIGHT_PWM);
+			dev_info = hass_init_light_device_info(LIGHT_PWM);
 		}
 
 		if (dev_info != NULL) {
@@ -1754,7 +1754,7 @@ int http_fn_ha_cfg(http_request_t* request) {
 					switchAdded = 1;
 				}
 
-				hass_print_unique_id(request, "  - unique_id: \"%s\"\n", ENTITY_RELAY, i);
+				hass_print_unique_id(request, "  - unique_id: \"%s\"\n", RELAY, i);
 				hprintf255(request, "    name: \"%s %i\"\n", shortDeviceName, i);
 				hprintf255(request, "    state_topic: \"%s/%i/get\"\n", clientId, i);
 				hprintf255(request, "    command_topic: \"%s/%i/set\"\n", clientId, i);
@@ -1778,7 +1778,7 @@ int http_fn_ha_cfg(http_request_t* request) {
 			switchAdded = 1;
 		}
 
-		hass_print_unique_id(request, "  - unique_id: \"%s\"\n", ENTITY_LIGHT_RGBCW, i);
+		hass_print_unique_id(request, "  - unique_id: \"%s\"\n", LIGHT_RGBCW, i);
 		hprintf255(request, "    name: \"%s %i\"\n", shortDeviceName, i);
 		http_generate_rgb_cfg(request, clientId);
 		hprintf255(request, "    #brightness_value_template: \"{{ value }}\"\n");
@@ -1798,7 +1798,7 @@ int http_fn_ha_cfg(http_request_t* request) {
 				switchAdded = 1;
 			}
 
-			hass_print_unique_id(request, "  - unique_id: \"%s\"\n", ENTITY_LIGHT_RGB, i);
+			hass_print_unique_id(request, "  - unique_id: \"%s\"\n", LIGHT_RGB, i);
 			hprintf255(request, "    name: \"%s\"\n", shortDeviceName);
 			http_generate_rgb_cfg(request, clientId);
 		}
@@ -1813,7 +1813,7 @@ int http_fn_ha_cfg(http_request_t* request) {
 				switchAdded = 1;
 			}
 
-			hass_print_unique_id(request, "  - unique_id: \"%s\"\n", ENTITY_LIGHT_PWM, i);
+			hass_print_unique_id(request, "  - unique_id: \"%s\"\n", LIGHT_PWM, i);
 			hprintf255(request, "    name: \"%s\"\n", shortDeviceName);
 			http_generate_singleColor_cfg(request, clientId);
 		}
@@ -1828,7 +1828,7 @@ int http_fn_ha_cfg(http_request_t* request) {
 				switchAdded = 1;
 			}
 
-			hass_print_unique_id(request, "  - unique_id: \"%s\"\n", ENTITY_LIGHT_PWMCW, i);
+			hass_print_unique_id(request, "  - unique_id: \"%s\"\n", LIGHT_PWMCW, i);
 			hprintf255(request, "    name: \"%s\"\n", shortDeviceName);
 			http_generate_cw_cfg(request, clientId);
 		}
@@ -1845,7 +1845,7 @@ int http_fn_ha_cfg(http_request_t* request) {
 						lightAdded = 1;
 					}
 
-					hass_print_unique_id(request, "  - unique_id: \"%s\"\n", ENTITY_LIGHT_PWM, i);
+					hass_print_unique_id(request, "  - unique_id: \"%s\"\n", LIGHT_PWM, i);
 					hprintf255(request, "    name: \"%s %i\"\n", shortDeviceName, i);
 					hprintf255(request, "    state_topic: \"%s/%i/get\"\n", clientId, i);
 					hprintf255(request, "    command_topic: \"%s/%i/set\"\n", clientId, i);
