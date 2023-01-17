@@ -1,0 +1,17 @@
+---
+BasedOnStyle: LLVM
+UseTab: Always
+IndentWidth: 4
+TabWidth: 4
+---
+Language: Cpp
+BreakBeforeBraces: Attach
+AllowShortBlocksOnASingleLine: Empty
+AllowShortEnumsOnASingleLine: False
+AllowShortFunctionsOnASingleLine: Empty
+IndentCaseLabels: false
+ColumnLimit: 100
+AccessModifierOffset: -1
+NamespaceIndentation: All
+Standard: Cpp11
+FixNamespaceComments: false
