@@ -39,7 +39,7 @@ static commandResult_t CMD_PowerSave(const void* context, const char* cmd, const
 	extern int bk_wlan_power_save_set_level(BK_PS_LEVEL level);
     bk_wlan_power_save_set_level(/*PS_DEEP_SLEEP_BIT */  PS_RF_SLEEP_BIT | PS_MCU_SLEEP_BIT);	
 	g_powersave = true;
-#elif defined(PLATFORM_W600)
+#elif defined(PLATFORM_W600) || defined(PLATFORM_W800)
 	tls_wifi_set_psflag(1, 0);	//Enable powersave but don't save to flash
 	g_powersave = true;
 #endif
